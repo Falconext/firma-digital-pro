@@ -2,7 +2,7 @@ node_modules
 dist
 .env
 *.log
-storage/
+/storage/
 prisma/dev.db
 prisma/dev.db-journal
 prisma/migrations/**/migration.sql.bak
