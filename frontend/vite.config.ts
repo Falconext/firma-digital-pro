@@ -17,7 +17,10 @@ export default defineConfig({
     // Así evitamos problemas de CORS y no hardcodeamos la URL del backend.
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        // IP explícita (no "localhost"): en Node 18+ / Windows, "localhost" a
+        // veces resuelve primero a IPv6 (::1), y si el backend solo escucha
+        // en IPv4 esto da ECONNREFUSED aunque el backend esté corriendo bien.
+        target: 'http://127.0.0.1:3000',
         changeOrigin: true,
       },
     },

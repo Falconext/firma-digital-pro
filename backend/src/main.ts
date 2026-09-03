@@ -44,7 +44,9 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   const port = config.get<number>('port') ?? 3000;
-  await app.listen(port);
+  // Host explícito: evita que en algunos Windows/Node 18+ el server quede
+  // escuchando solo en IPv6 y las conexiones por IPv4 (127.0.0.1) fallen.
+  await app.listen(port, '0.0.0.0');
   console.log(`🚀 API Firma Digital Pro corriendo en http://localhost:${port}`);
 }
 bootstrap();
