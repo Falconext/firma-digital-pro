@@ -10,11 +10,14 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger('ExceptionsHandler');
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -23,6 +26,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    // Si NO es un HttpException (login rechazado, validación, etc.) es un error
+    // inesperado (bug, base de datos, etc.): lo imprimimos completo en consola
+    // para poder depurarlo. Antes se silenciaba y no quedaba rastro.
+    if (!(exception instanceof HttpException)) {
+      this.logger.error(
+        exception instanceof Error ? exception.message : exception,
+        exception instanceof Error ? exception.stack : undefined,
+      );
+    }
 
     let message = 'Ocurrió un error inesperado';
     if (exception instanceof HttpException) {
