@@ -17,7 +17,7 @@ export default defineConfig({
     // Así evitamos problemas de CORS y no hardcodeamos la URL del backend.
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3000',
         changeOrigin: true,
       },
     },
