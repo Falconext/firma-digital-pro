@@ -1,0 +1,22 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+dist-ssr/
+
+# Entornos
+.env
+*.local
+
+# Base de datos local (SQLite)
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+
+# Archivos subidos/firmados
+backend/storage/
+
+# Logs y temporales
+*.log
+.vite/
+.DS_Store

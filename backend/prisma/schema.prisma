@@ -1,0 +1,150 @@
+// ===========================================================================
+//  Esquema de base de datos — Firma Digital Pro
+//  Prisma traduce este archivo a tablas SQL. Cada "model" = una tabla.
+//
+//  Por defecto usamos SQLite (archivo dev.db) para que sea fácil de arrancar.
+//  Para producción: cambia provider a "postgresql" y ajusta DATABASE_URL.
+// ===========================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // Cambiar a "postgresql" en producción
+  url      = env("DATABASE_URL")
+}
+
+/// Roles del sistema. Controlan qué puede hacer cada usuario.
+enum Role {
+  ADMIN // Acceso total: usuarios, firmantes, documentos, configuración
+  OPERADOR // Sube y firma documentos, pero no administra usuarios
+}
+
+/// Estados por los que pasa un documento en su ciclo de vida.
+enum DocumentStatus {
+  PENDIENTE // Subido, aún sin sello ni firma (caso excepcional)
+  SELLADO // QR + bloque de firmante estampado automáticamente al subir
+  FIRMADO // Firmado con ReFirma (firma digital válida)
+  ANULADO // Descartado / dado de baja
+}
+
+/// Usuarios que ingresan a la plataforma.
+model User {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  apellido      String
+  email         String   @unique
+  password      String // Se guarda "hasheada" con bcrypt, nunca en texto plano
+  rol           Role     @default(OPERADOR)
+  imagenPerfil  String?
+  estado        Boolean  @default(true) // false = usuario deshabilitado
+  refreshToken  String? // Token de refresco (hasheado) para renovar la sesión
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  documents     Document[]
+  auditLogs     AuditLog[]
+
+  @@map("usuarios")
+}
+
+/// Firmantes: personas cuya firma digital se estampa en los documentos.
+/// (Ej: el gerente que aprueba certificados). Reemplaza el arreglo fijo
+/// "options" que estaba escrito a mano en el proyecto original.
+model Signatory {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  dni          String
+  cip          String?
+  cargo        String
+  empresa      String
+  motivo       String   @default("Aprobación de Documento")
+  /// Imagen PNG de la rúbrica/firma manuscrita (base64). Se estampa junto al QR.
+  firmaImagen  String?
+  estado       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  documents Document[]
+
+  @@map("firmantes")
+}
+
+/// Carpetas para organizar los documentos en una jerarquía (árbol).
+/// Una carpeta puede contener subcarpetas (parent → hijos) sin límite de niveles.
+/// Son COMPARTIDAS: todos los usuarios ven el mismo árbol.
+model Carpeta {
+  id        Int        @id @default(autoincrement())
+  nombre    String
+
+  /// Carpeta padre. null = carpeta en la raíz. Al borrar el padre, se borran
+  /// los hijos en cascada (los documentos se mueven a la raíz, ver folderId).
+  parent    Carpeta?   @relation("CarpetaHijos", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId  Int?
+  hijos     Carpeta[]  @relation("CarpetaHijos")
+
+  documents Document[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("carpetas")
+}
+
+/// Documentos PDF gestionados por la plataforma.
+model Document {
+  id             Int            @id @default(autoincrement())
+  fileName       String // Concepto / nombre visible del documento
+  storageKey     String // Nombre del archivo PDF original en disco
+  sealedKey      String? // PDF con QR + bloque de firmante (sello automático al subir)
+  signedKey      String? // Nombre del archivo PDF ya firmado (si existe)
+  status         DocumentStatus @default(PENDIENTE)
+  hash           String? // Huella SHA-256 del archivo vigente (integridad)
+  sealedAt       DateTime? // Cuándo se estampó el sello + QR automático
+  signedAt       DateTime?
+
+  /// Datos extraídos de la firma digital embebida (flujo de re-subida del PDF
+  /// ya firmado con ReFirma). Se llenan al validar la firma PAdES/PKCS#7.
+  signerName     String? // Nombre del firmante (CN del certificado)
+  signerDni      String? // DNI extraído del certificado, si aplica
+  signerIssuer   String? // Entidad emisora del certificado (RENIEC/ECEP)
+  signatureValid Boolean? // Resultado de la validación criptográfica
+  signatureInfo  String? // JSON con el detalle completo de la validación
+
+  /// Datos del cliente a quien se remite el documento firmado por correo.
+  clienteEmail   String?
+  clienteNombre  String?
+  emailEnviadoAt DateTime?
+
+  /// Carpeta donde vive el documento. null = raíz. Si se borra la carpeta,
+  /// el documento no se pierde: queda en la raíz (SetNull).
+  carpeta      Carpeta?       @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folderId     Int?
+
+  signatory    Signatory?     @relation(fields: [signatoryId], references: [id])
+  signatoryId  Int?
+
+  createdBy    User           @relation(fields: [createdById], references: [id])
+  createdById  Int
+
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@map("documentos")
+}
+
+/// Bitácora de auditoría: quién hizo qué y cuándo. Clave en firma digital.
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  action    String // Ej: "DOCUMENTO_FIRMADO", "USUARIO_LOGIN"
+  entity    String // Ej: "Document", "User"
+  entityId  Int?
+  detail    String?
+  ip        String?
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+  createdAt DateTime @default(now())
+
+  @@map("auditoria")
+}
