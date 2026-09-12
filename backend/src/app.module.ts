@@ -15,6 +15,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { FoldersModule } from './modules/folders/folders.module';
 import { RefirmaModule } from './modules/refirma/refirma.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { ClientsModule } from './modules/clients/clients.module';
 
 @Module({
   imports: [
