@@ -148,3 +148,28 @@ model AuditLog {
 
   @@map("auditoria")
 }
+
+/// Tipos de documento del cliente.
+enum TipoDocumento {
+  DNI
+  RUC
+  CARNET_EXTRANJERIA
+  PASAPORTE
+}
+
+/// Clientes a quienes se remiten documentos.
+model Client {
+  id              Int           @id @default(autoincrement())
+  tipoDocumento   TipoDocumento
+  numeroDocumento String
+  correo          String
+  telefono        String
+  estado          Boolean       @default(true)
+  imagenPerfil    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@unique([tipoDocumento, numeroDocumento])
+
+  @@map("clientes")
+}
