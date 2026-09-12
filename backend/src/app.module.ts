@@ -31,6 +31,7 @@ import { ClientsModule } from './modules/clients/clients.module';
     FoldersModule, // Carpetas anidadas para organizar documentos
     RefirmaModule, // Integración con ReFirma (RENIEC)
     DashboardModule, // Métricas del panel
+    ClientsModule, // CRUD de clientes
   ],
 })
 export class AppModule {}
