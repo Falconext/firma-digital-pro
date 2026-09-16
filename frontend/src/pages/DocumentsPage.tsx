@@ -29,6 +29,7 @@ import { validateSignature, uploadSignedVersion } from '@/lib/signature';
 import { fileToBase64, formatDate } from '@/lib/utils';
 import type {
   Carpeta,
+  Client,
   DocumentItem,
   FolderContents,
   Signatory,
@@ -48,6 +49,7 @@ export function DocumentsPage() {
 
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [signatories, setSignatories] = useState<Signatory[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -76,6 +78,7 @@ export function DocumentsPage() {
 
   // Envío por correo al cliente (paso 6.7)
   const [emailTarget, setEmailTarget] = useState<DocumentItem | null>(null);
+  const [emailClienteId, setEmailClienteId] = useState<number | ''>('');
   const [emailTo, setEmailTo] = useState('');
   const [emailNombre, setEmailNombre] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -97,6 +100,7 @@ export function DocumentsPage() {
   // Formulario de subida
   const [fileName, setFileName] = useState('');
   const [signatoryId, setSignatoryId] = useState<number | ''>('');
+  const [clienteId, setClienteId] = useState<number | ''>('');
   const [base64, setBase64] = useState('');
   const [selectedName, setSelectedName] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -131,6 +135,7 @@ export function DocumentsPage() {
 
   useEffect(() => {
     http.get<Signatory[]>('/firmante').then(setSignatories);
+    http.get<Client[]>('/clientes').then(setClients).catch(() => setClients([]));
   }, []);
 
   useEffect(() => {
@@ -236,6 +241,7 @@ export function DocumentsPage() {
   const resetUploadForm = () => {
     setFileName('');
     setSignatoryId('');
+    setClienteId('');
     setBase64('');
     setSelectedName('');
     if (fileRef.current) fileRef.current.value = '';
@@ -251,6 +257,7 @@ export function DocumentsPage() {
         fileName: fileName.trim(),
         base64File: base64,
         signatoryId,
+        clienteId: clienteId || null, // cliente registrado (opcional)
         folderId, // se guarda dentro de la carpeta abierta (null = raíz)
       });
       notify('Documento subido y sellado con código QR', 'success');
@@ -320,8 +327,20 @@ export function DocumentsPage() {
   // --- Enviar por correo al cliente (paso 6.7) ---
   const openEmailModal = (doc: DocumentItem) => {
     setEmailTarget(doc);
-    setEmailTo(doc.clienteEmail ?? '');
-    setEmailNombre(doc.clienteNombre ?? '');
+    setEmailClienteId(doc.clienteId ?? '');
+    setEmailTo(doc.clienteEmail ?? doc.cliente?.correo ?? '');
+    setEmailNombre(doc.clienteNombre ?? doc.cliente?.nombre ?? '');
+  };
+
+  /** Al elegir un cliente registrado, se rellenan su correo y nombre. */
+  const pickEmailClient = (value: string) => {
+    const id = value ? Number(value) : '';
+    setEmailClienteId(id);
+    const c = clients.find((x) => x.id === id);
+    if (c) {
+      setEmailTo(c.correo);
+      setEmailNombre(c.nombre);
+    }
   };
 
   const submitEmail = async () => {
@@ -330,6 +349,7 @@ export function DocumentsPage() {
     setSendingEmail(true);
     try {
       await http.post(`/file/${emailTarget.id}/enviar-correo`, {
+        clienteId: emailClienteId || undefined,
         email: emailTo.trim(),
         clienteNombre: emailNombre.trim() || undefined,
       });
@@ -543,6 +563,11 @@ export function DocumentsPage() {
                       <FileText className="h-4 w-4 text-primary" />
                       {doc.fileName}
                     </div>
+                    {doc.cliente && (
+                      <p className="mt-0.5 pl-6 text-xs text-muted-foreground">
+                        Cliente: {doc.cliente.nombre}
+                      </p>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-muted-foreground">
                     {doc.signatory?.nombre ?? '—'}
@@ -568,7 +593,7 @@ export function DocumentsPage() {
                             title="Subir versión firmada (validar firma real)"
                             onClick={() => openSignedUpload(doc)}
                           >
-                            <BadgeCheck className="h-4 w-4 text-green-600" />
+                            <BadgeCheck className="h-4 w-4 text-success" />
                           </IconButton>
                         </>
                       )}
@@ -645,6 +670,24 @@ export function DocumentsPage() {
               {signatories.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.nombre} — {s.cargo}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Cliente (opcional)
+            </label>
+            <select
+              value={clienteId}
+              onChange={(e) => setClienteId(e.target.value ? Number(e.target.value) : '')}
+              className="h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-foreground focus:border-primary"
+            >
+              <option value="">Sin cliente</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre} — {c.tipoDocumento} {c.numeroDocumento}
                 </option>
               ))}
             </select>
@@ -778,6 +821,23 @@ export function DocumentsPage() {
           <p className="text-sm text-muted-foreground">
             Se enviará <strong>{emailTarget?.fileName}</strong> (firmado) como adjunto PDF.
           </p>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Cliente registrado (opcional)
+            </label>
+            <select
+              value={emailClienteId}
+              onChange={(e) => pickEmailClient(e.target.value)}
+              className="h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-foreground focus:border-primary"
+            >
+              <option value="">Escribir correo manualmente</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre} — {c.correo}
+                </option>
+              ))}
+            </select>
+          </div>
           <Input
             label="Correo del cliente"
             type="email"
@@ -859,7 +919,7 @@ export function DocumentsPage() {
             onClick={() => signedRef.current?.click()}
             className="flex w-full flex-col items-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/40 px-4 py-8 text-center transition-colors hover:border-primary"
           >
-            <BadgeCheck className="h-8 w-8 text-green-600" />
+            <BadgeCheck className="h-8 w-8 text-success" />
             <span className="text-sm font-medium text-foreground">
               {signedName || 'Haz clic para seleccionar el PDF firmado'}
             </span>

@@ -92,7 +92,7 @@ export class DocumentsService {
         signatureValid: true,
         signatureInfo: JSON.stringify(result),
       },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
 
     await this.prisma.auditLog.create({
@@ -111,6 +111,7 @@ export class DocumentsService {
 
   /** Sube un nuevo documento PDF (opcionalmente dentro de una carpeta). */
   async create(userId: number, dto: CreateDocumentDto) {
+    if (dto.clienteId != null) await this.ensureClient(dto.clienteId);
     const storageKey = await this.storage.savePdfFromBase64(dto.base64File);
     return this.prisma.document.create({
       data: {
@@ -118,9 +119,10 @@ export class DocumentsService {
         storageKey,
         signatoryId: dto.signatoryId,
         folderId: dto.folderId ?? null,
+        clienteId: dto.clienteId ?? null,
         createdById: userId,
       },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
   }
 
@@ -136,7 +138,7 @@ export class DocumentsService {
     else if (folder != null && folder !== '') where.folderId = Number(folder);
     return this.prisma.document.findMany({
       where,
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -144,7 +146,7 @@ export class DocumentsService {
   async findOne(id: number) {
     const doc = await this.prisma.document.findUnique({
       where: { id },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
     if (!doc) throw new NotFoundException('Documento no encontrado');
     return doc;
@@ -192,9 +194,18 @@ export class DocumentsService {
     if (!key) throw new BadRequestException('El documento no tiene un archivo firmado disponible.');
     const buffer = await this.storage.read(key);
 
+    // Destinatario: el cliente registrado (si se indicó) o el correo suelto.
+    // Si se da clienteId, el documento queda asociado a ese cliente.
+    const cliente = dto.clienteId != null ? await this.ensureClient(dto.clienteId) : null;
+    const email = cliente?.correo ?? dto.email;
+    const nombre = dto.clienteNombre ?? cliente?.nombre ?? null;
+    if (!email) {
+      throw new BadRequestException('Indica un correo o un cliente registrado.');
+    }
+
     await this.mail.sendSignedDocument({
-      to: dto.email,
-      clienteNombre: dto.clienteNombre,
+      to: email,
+      clienteNombre: nombre,
       fileName: doc.fileName,
       pdfBuffer: buffer,
       verifyUrl: `${verifyBaseUrl}/${doc.id}`,
@@ -203,11 +214,12 @@ export class DocumentsService {
     const updated = await this.prisma.document.update({
       where: { id },
       data: {
-        clienteEmail: dto.email,
-        clienteNombre: dto.clienteNombre,
+        ...(cliente ? { clienteId: cliente.id } : {}),
+        clienteEmail: email,
+        clienteNombre: nombre,
         emailEnviadoAt: new Date(),
       },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
 
     await this.prisma.auditLog.create({
@@ -215,7 +227,7 @@ export class DocumentsService {
         action: 'DOCUMENTO_ENVIADO_EMAIL',
         entity: 'Document',
         entityId: id,
-        detail: `Documento firmado enviado a ${dto.email}`,
+        detail: `Documento firmado enviado a ${email}`,
         userId,
         ip,
       },
@@ -226,11 +238,21 @@ export class DocumentsService {
 
   async update(id: number, dto: UpdateDocumentDto) {
     await this.findOne(id);
+    if (dto.clienteId != null) await this.ensureClient(dto.clienteId);
     return this.prisma.document.update({
       where: { id },
       data: dto,
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
+  }
+
+  /** Verifica que el cliente exista y esté activo (para asociarlo a un documento). */
+  private async ensureClient(clienteId: number) {
+    const cliente = await this.prisma.client.findUnique({ where: { id: clienteId } });
+    if (!cliente || !cliente.estado) {
+      throw new BadRequestException('El cliente indicado no existe o está inactivo.');
+    }
+    return cliente;
   }
 
   async remove(id: number) {

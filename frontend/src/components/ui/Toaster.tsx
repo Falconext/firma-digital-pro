@@ -4,7 +4,7 @@ import { useUIStore, type ToastType } from '@/stores/ui.store';
 import { cn } from '@/lib/utils';
 
 const config: Record<ToastType, { icon: typeof Info; color: string }> = {
-  success: { icon: CheckCircle2, color: 'text-accent' },
+  success: { icon: CheckCircle2, color: 'text-success' },
   error: { icon: XCircle, color: 'text-destructive' },
   info: { icon: Info, color: 'text-primary' },
 };

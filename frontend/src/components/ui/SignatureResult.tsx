@@ -15,9 +15,9 @@ export function SignatureResult({ result }: { result: ValidationResult }) {
       : 'bad';
 
   const box = {
-    ok: 'border-green-200 bg-green-50 text-green-800',
-    bad: 'border-red-200 bg-red-50 text-red-800',
-    neutral: 'border-amber-200 bg-amber-50 text-amber-800',
+    ok: 'border-success/20 bg-success-soft text-success',
+    bad: 'border-destructive/20 bg-destructive-soft text-destructive',
+    neutral: 'border-warning/20 bg-warning-soft text-warning',
   }[tone];
 
   const Icon = tone === 'ok' ? ShieldCheck : tone === 'bad' ? ShieldX : ShieldAlert;
@@ -38,7 +38,7 @@ export function SignatureResult({ result }: { result: ValidationResult }) {
             </span>
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                s.valid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                s.valid ? 'bg-success-soft text-success' : 'bg-destructive-soft text-destructive'
               }`}
             >
               {s.valid ? 'Válida' : 'No válida'}
@@ -46,7 +46,7 @@ export function SignatureResult({ result }: { result: ValidationResult }) {
           </div>
 
           {s.error ? (
-            <p className="text-xs text-red-600">No se pudo procesar: {s.error}</p>
+            <p className="text-xs text-destructive">No se pudo procesar: {s.error}</p>
           ) : (
             <>
               <dl className="grid grid-cols-3 gap-x-3 gap-y-1.5">
@@ -87,7 +87,7 @@ function Check({ ok, label }: { ok: boolean; label: string }) {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-        ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        ok ? 'bg-success-soft text-success' : 'bg-destructive-soft text-destructive'
       }`}
     >
       {ok ? '✓' : '✕'} {label}

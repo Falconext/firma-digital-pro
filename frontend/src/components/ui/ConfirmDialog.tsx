@@ -25,7 +25,7 @@ export function ConfirmDialog({
   return (
     <Modal open={open} onClose={onClose} title={title} size="md">
       <div className="flex gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-100">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-destructive-soft">
           <AlertTriangle className="h-6 w-6 text-destructive" />
         </div>
         <p className="text-sm text-muted-foreground">{message}</p>

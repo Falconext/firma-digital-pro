@@ -28,6 +28,45 @@ export interface Signatory {
   estado: boolean;
 }
 
+export type TipoDocumento = 'DNI' | 'RUC' | 'CARNET_EXTRANJERIA' | 'PASAPORTE';
+
+/** Cliente: persona (DNI) o empresa (RUC) a quien se remiten documentos. */
+export interface Client {
+  id: number;
+  tipoDocumento: TipoDocumento;
+  numeroDocumento: string;
+  /** Nombre completo o razón social. */
+  nombre: string;
+  /** Persona de contacto. */
+  contacto?: string | null;
+  correo: string;
+  telefono: string;
+  direccion?: string | null;
+  imagenPerfil?: string | null;
+  estado: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  _count?: { documents: number };
+}
+
+/** Resultado de consultar un DNI (RENIEC) o RUC (SUNAT). */
+export interface IdentidadResult {
+  tipo: 'DNI' | 'RUC';
+  numero: string;
+  /** Nombre completo (DNI) o razón social (RUC). */
+  nombre: string;
+  nombres?: string | null;
+  apellidoPaterno?: string | null;
+  apellidoMaterno?: string | null;
+  direccion?: string | null;
+  estado?: string | null;
+  condicion?: string | null;
+  ubigeo?: string | null;
+  departamento?: string | null;
+  provincia?: string | null;
+  distrito?: string | null;
+}
+
 export interface DocumentItem {
   id: number;
   fileName: string;
@@ -38,6 +77,8 @@ export interface DocumentItem {
   signatory?: Signatory | null;
   signatoryId?: number | null;
   folderId?: number | null;
+  clienteId?: number | null;
+  cliente?: Client | null;
   clienteEmail?: string | null;
   clienteNombre?: string | null;
   emailEnviadoAt?: string | null;
@@ -47,6 +88,121 @@ export interface DocumentItem {
   signerDni?: string | null;
   signerIssuer?: string | null;
   signatureValid?: boolean | null;
+}
+
+export type TipoItem = 'SERVICIO' | 'PRODUCTO';
+export type CategoriaServicio =
+  | 'ENSAYO_FISICOQUIMICO'
+  | 'ENSAYO_MICROBIOLOGICO'
+  | 'ENSAYO_SENSORIAL'
+  | 'INSPECCION'
+  | 'MUESTREO'
+  | 'CONSULTORIA'
+  | 'CAPACITACION'
+  | 'OTRO';
+
+/** Ítem del catálogo que se cotiza (ensayo, inspección, consultoría…). */
+export interface Service {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion?: string | null;
+  tipo: TipoItem;
+  categoria: CategoriaServicio;
+  metodo?: string | null;
+  acreditado: boolean;
+  /** true = lo ejecuta un tercero (SUB). */
+  subcontratado?: boolean;
+  unidad: string;
+  /** Prisma serializa Decimal como string; convertir con Number(). */
+  precio: string | number;
+  moneda: string;
+  tiempoEntregaDias?: number | null;
+  estado: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type EstadoCotizacion =
+  | 'BORRADOR'
+  | 'ENVIADA'
+  | 'ACEPTADA'
+  | 'RECHAZADA'
+  | 'VENCIDA'
+  | 'ANULADA';
+
+export interface QuotationItem {
+  id?: number;
+  servicioId?: number | null;
+  codigo?: string | null;
+  /** Columna ACTIVIDAD (servicio). */
+  actividad?: string | null;
+  /** Columna DESCRIPCIÓN (producto / muestra). */
+  descripcion: string;
+  documentoNormativo?: string | null;
+  /** PRO (true) / SUB (false). */
+  propio?: boolean;
+  /** AC (true) / NA (false). */
+  acreditado?: boolean;
+  unidad: string;
+  cantidad: string | number;
+  precioUnitario: string | number;
+  total: string | number;
+  orden?: number;
+  servicio?: { id: number; codigo: string; estado: boolean } | null;
+}
+
+/** Cotización completa (detalle). Los montos vienen como string (Decimal). */
+export interface Quotation {
+  id: number;
+  numero: string;
+  clienteId: number;
+  cliente: Client;
+  estado: EstadoCotizacion;
+  fecha: string;
+  validezDias: number;
+  vencimiento?: string | null;
+  moneda: string;
+  aplicaIgv: boolean;
+  igvPorcentaje: string | number;
+  subtotal: string | number;
+  descuento: string | number;
+  igv: string | number;
+  total: string | number;
+  observaciones?: string | null;
+  condiciones?: string | null;
+  codigoServicio?: string | null;
+  servicioSolicitado?: string | null;
+  contramuestra?: boolean;
+  entregable?: string | null;
+  tiempoEntrega?: string | null;
+  responsableId?: number | null;
+  responsable?: { id: number; nombre: string; cargo: string; firmaImagen?: string | null } | null;
+  enviadaAt?: string | null;
+  enviadaA?: string | null;
+  documentoId?: number | null;
+  documento?: { id: number; fileName?: string; status: DocumentStatus; signedAt?: string | null } | null;
+  createdBy?: { id: number; nombre: string; apellido: string };
+  items: QuotationItem[];
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/** Fila del listado de cotizaciones (sin ítems). */
+export interface QuotationRow {
+  id: number;
+  numero: string;
+  estado: EstadoCotizacion;
+  fecha: string;
+  vencimiento?: string | null;
+  moneda: string;
+  total: string | number;
+  enviadaAt?: string | null;
+  documentoId?: number | null;
+  documento?: { id: number; status: DocumentStatus } | null;
+  cliente: { id: number; nombre: string; tipoDocumento: TipoDocumento; numeroDocumento: string; correo: string; telefono: string };
+  _count?: { items: number };
+  createdAt: string;
 }
 
 /** Detalle de una firma digital embebida encontrada en un PDF. */

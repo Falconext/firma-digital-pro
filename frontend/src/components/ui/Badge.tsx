@@ -3,10 +3,10 @@ import { cn } from '@/lib/utils';
 import type { DocumentStatus } from '@/types';
 
 const styles: Record<DocumentStatus, string> = {
-  FIRMADO: 'bg-green-100 text-green-800',
-  SELLADO: 'bg-blue-100 text-blue-800',
-  PENDIENTE: 'bg-amber-100 text-amber-800',
-  ANULADO: 'bg-gray-200 text-gray-700',
+  FIRMADO: 'bg-success-soft text-success',
+  SELLADO: 'bg-info-soft text-info',
+  PENDIENTE: 'bg-warning-soft text-warning',
+  ANULADO: 'bg-muted text-muted-foreground',
 };
 
 const labels: Record<DocumentStatus, string> = {

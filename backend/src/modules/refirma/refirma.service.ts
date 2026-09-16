@@ -73,7 +73,7 @@ export class RefirmaService {
   ) {
     const doc = await this.prisma.document.findUnique({
       where: { id: documentId },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
     if (!doc) throw new BadRequestException('Documento no encontrado');
     if (!doc.signatory) {
@@ -93,7 +93,7 @@ export class RefirmaService {
         status: DocumentStatus.SELLADO,
         sealedAt: new Date(),
       },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
 
     await this.prisma.auditLog.create({
@@ -130,7 +130,7 @@ export class RefirmaService {
   ) {
     const doc = await this.prisma.document.findUnique({
       where: { id: documentId },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
     if (!doc) throw new BadRequestException('Documento no encontrado');
     if (!doc.signatory) {
@@ -158,7 +158,7 @@ export class RefirmaService {
         status: DocumentStatus.FIRMADO,
         signedAt: new Date(),
       },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
 
     await this.prisma.auditLog.create({
@@ -220,7 +220,7 @@ export class RefirmaService {
   async prepareSigning(documentId: number, apiBaseUrl: string) {
     const doc = await this.prisma.document.findUnique({
       where: { id: documentId },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
     if (!doc) throw new BadRequestException('Documento no encontrado');
     if (doc.status === DocumentStatus.FIRMADO) {
@@ -280,7 +280,7 @@ export class RefirmaService {
         status: DocumentStatus.FIRMADO,
         signedAt: new Date(),
       },
-      include: { signatory: true },
+      include: { signatory: true, cliente: true },
     });
 
     // Auditoría: quién firmó, qué documento y con qué huella

@@ -16,6 +16,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   const config = app.get(ConfigService);
 
+  // En hosting con proxy (Railway, etc.) esto hace que req.protocol sea "https"
+  // y req.ip la IP real del usuario (se usan en las URLs del QR y en auditoría).
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // Los PDF en base64 pueden pesar varios MB: subimos el límite (default: 100kb).
   app.use(json({ limit: '25mb' }));
   app.use(urlencoded({ extended: true, limit: '25mb' }));

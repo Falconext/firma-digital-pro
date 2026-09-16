@@ -36,7 +36,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             className={cn(
               'h-11 w-full rounded-xl border bg-surface px-3 text-sm text-foreground',
               'placeholder:text-muted-foreground',
-              'transition-colors focus:border-primary',
+              'transition-all focus:border-primary focus:shadow-glow',
               icon && 'pl-10',
               error ? 'border-destructive' : 'border-border',
               className,

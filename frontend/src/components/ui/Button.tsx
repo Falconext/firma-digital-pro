@@ -17,10 +17,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary: 'bg-primary text-white hover:bg-primary-hover shadow-soft',
-  accent: 'bg-accent text-white hover:bg-accent-hover shadow-soft',
-  outline: 'border border-border bg-surface text-primary hover:bg-muted',
+  // Lima del logo con texto petróleo: la acción "positiva" (firmar, confirmar)
+  accent: 'bg-accent text-accent-foreground hover:bg-accent-hover shadow-soft',
+  outline: 'border border-border bg-surface text-primary hover:border-primary/40 hover:bg-primary-soft',
   ghost: 'text-foreground hover:bg-muted',
-  danger: 'bg-destructive text-white hover:bg-red-700 shadow-soft',
+  danger: 'bg-destructive text-white hover:bg-destructive-hover shadow-soft',
 };
 
 const sizes: Record<Size, string> = {
@@ -36,7 +37,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled={disabled || loading}
       className={cn(
         'inline-flex items-center justify-center gap-2 rounded-xl font-semibold',
-        'transition-colors duration-200 cursor-pointer',
+        'transition-all duration-200 cursor-pointer active:scale-[0.98]',
         'disabled:opacity-60 disabled:cursor-not-allowed',
         variants[variant],
         sizes[size],

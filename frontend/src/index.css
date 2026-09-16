@@ -4,15 +4,34 @@
 
 /* Estilos base globales */
 @layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
   body {
     @apply bg-background text-foreground font-sans antialiased;
   }
   h1, h2, h3, h4 {
-    @apply font-heading;
+    @apply font-heading tracking-tight;
+  }
+  /* Selección de texto con el cian de la marca */
+  ::selection {
+    background: rgba(59, 198, 238, 0.35);
   }
   /* Anillo de foco visible para navegación con teclado (accesibilidad) */
   :focus-visible {
-    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-primary-light ring-offset-2 ring-offset-background;
+  }
+  /* Números alineados en tablas y métricas */
+  table, .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Título de página reutilizable */
+  .page-title {
+    @apply font-heading text-2xl font-bold text-foreground;
   }
 }
 
@@ -32,9 +51,21 @@
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #c5d9e2;
   border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #9dbccb;
+  background-clip: padding-box;
+}
+
+/* Evita el fondo azul que Chrome pone en campos autocompletados */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  -webkit-text-fill-color: #0b3346;
+  caret-color: #0b3346;
 }

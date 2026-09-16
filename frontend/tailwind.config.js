@@ -1,9 +1,10 @@
 /**
  * Configuración de Tailwind CSS.
- * Aquí definimos la paleta de colores y tipografías de la marca
- * (generadas con el sistema de diseño "Soft UI Evolution").
- * Usar tokens semánticos (primary, accent...) en vez de colores sueltos
+ * Paleta derivada del logotipo de LENA (Laboratorio de Evaluación Nutricional
+ * de Alimentos): petróleo #006389, cian #3BC6EE y lima #B9D86D.
+ * Usar tokens semánticos (primary, accent, success...) en vez de colores sueltos
  * hace que todo se vea consistente y sea fácil de cambiar.
+ * Todos los pares texto/fondo cumplen contraste WCAG AA (≥ 4.5:1).
  */
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -12,32 +13,38 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#1E40AF', // Azul institucional (confianza, seguridad)
-          hover: '#1D3A9E',
-          light: '#3B82F6',
+          DEFAULT: '#006389', // Petróleo del logo (marca, botones, navegación)
+          hover: '#00516F',
+          deep: '#00425C', // Fondos oscuros (panel de login, sidebar activo)
+          light: '#3BC6EE', // Cian del logo (acentos, indicadores, brillos)
+          soft: '#E3F4FA', // Cian muy claro (fondos de ícono, filas activas)
         },
         accent: {
-          DEFAULT: '#16A34A', // Verde acción (firmar, confirmar)
-          hover: '#15803D',
+          DEFAULT: '#B9D86D', // Lima del logo (acción principal: firmar, confirmar)
+          hover: '#A9CC55',
+          foreground: '#0B3346', // Texto sobre lima (8.3:1)
         },
         surface: '#FFFFFF',
-        background: '#EFF6FF', // Fondo azul muy claro
-        foreground: '#1E3A8A',
-        muted: '#E9EFF5',
-        'muted-foreground': '#64748B',
-        border: '#BFDBFE',
-        destructive: '#DC2626',
-        warning: '#D97706',
+        background: '#F4F9FB', // Fondo general con leve tinte cian
+        foreground: '#0B3346', // Texto principal (petróleo muy oscuro)
+        muted: '#E8F1F5',
+        'muted-foreground': '#4F7382', // 5.1:1 sobre blanco
+        border: '#D5E5EC',
+        destructive: { DEFAULT: '#DC2626', hover: '#B91C1C', soft: '#FEE2E2' },
+        warning: { DEFAULT: '#B45309', soft: '#FEF3C7' },
+        success: { DEFAULT: '#3F7D20', soft: '#EEF6DC' }, // Verde afín al lima
+        info: { DEFAULT: '#00516F', soft: '#E3F4FA' },
       },
       fontFamily: {
-        // Lexend para títulos, Source Sans 3 para el cuerpo
-        heading: ['Lexend', 'system-ui', 'sans-serif'],
-        sans: ['"Source Sans 3"', 'system-ui', 'sans-serif'],
+        // Plus Jakarta Sans (geométrica, afín al logotipo) para títulos; Inter para cuerpo
+        heading: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        // Sombras suaves (estilo Soft UI)
-        soft: '0 1px 3px rgba(30, 64, 175, 0.06), 0 4px 12px rgba(30, 64, 175, 0.08)',
-        'soft-lg': '0 8px 30px rgba(30, 64, 175, 0.12)',
+        // Sombras suaves teñidas de petróleo
+        soft: '0 1px 2px rgba(0, 66, 92, 0.05), 0 4px 14px rgba(0, 66, 92, 0.07)',
+        'soft-lg': '0 12px 36px rgba(0, 66, 92, 0.14)',
+        glow: '0 0 0 4px rgba(59, 198, 238, 0.25)',
       },
       borderRadius: {
         xl: '0.9rem',
@@ -48,9 +55,14 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
       },
       animation: {
         'fade-in-up': 'fade-in-up 0.35s ease-out both',
+        float: 'float 6s ease-in-out infinite',
       },
     },
   },

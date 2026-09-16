@@ -3,8 +3,10 @@
  * Reemplaza el arreglo "quemado" del proyecto original por datos reales.
  */
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { UserPlus, Pencil, Trash2, IdCard, PenLine, X } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, IdCard, PenLine, SearchCheck, X } from 'lucide-react';
 import { http } from '@/lib/api';
+import { consultarIdentidad, puedeConsultar } from '@/lib/identidad';
+import { errorMessage } from '@/lib/utils';
 import type { Signatory } from '@/types';
 import { useUIStore } from '@/stores/ui.store';
 import { useAuthStore } from '@/stores/auth.store';
@@ -44,7 +46,23 @@ export function SignatoriesPage() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [toDelete, setToDelete] = useState<Signatory | null>(null);
   const [saving, setSaving] = useState(false);
+  const [consultando, setConsultando] = useState(false);
   const firmaRef = useRef<HTMLInputElement>(null);
+
+  /** Consulta el DNI en RENIEC y rellena el nombre del firmante. */
+  const consultarDni = async () => {
+    if (!puedeConsultar('DNI', form.dni)) return notify('El DNI debe tener 8 dígitos', 'error');
+    setConsultando(true);
+    try {
+      const r = await consultarIdentidad('DNI', form.dni);
+      setForm((f) => ({ ...f, dni: r.numero, nombre: r.nombre || f.nombre }));
+      notify(`RENIEC: ${r.nombre}`, 'success');
+    } catch (e) {
+      notify(errorMessage(e, 'No se pudo consultar RENIEC'), 'error');
+    } finally {
+      setConsultando(false);
+    }
+  };
 
   const load = () => http.get<Signatory[]>('/firmante').then(setItems);
   useEffect(() => {
@@ -192,13 +210,36 @@ export function SignatoriesPage() {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={form.id ? 'Editar firmante' : 'Nuevo firmante'}
-        size="md"
+        size="lg"
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Input label="Nombre completo" value={form.nombre} onChange={set('nombre')} />
           </div>
-          <Input label="DNI / RUC" value={form.dni} onChange={set('dni')} />
+          <div className="flex items-end gap-2">
+            <Input
+              label="DNI"
+              value={form.dni}
+              onChange={set('dni')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  consultarDni();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={consultarDni}
+              loading={consultando}
+              disabled={!puedeConsultar('DNI', form.dni)}
+              title="Consultar en RENIEC"
+            >
+              <SearchCheck className="h-4 w-4" />
+              RENIEC
+            </Button>
+          </div>
           <Input label="CIP (opcional)" value={form.cip} onChange={set('cip')} />
           <Input label="Cargo" value={form.cargo} onChange={set('cargo')} />
           <Input label="Empresa" value={form.empresa} onChange={set('empresa')} />

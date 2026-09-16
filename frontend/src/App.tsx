@@ -18,6 +18,10 @@ import { LoginPage } from '@/pages/LoginPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { DocumentsPage } from '@/pages/DocumentsPage';
 import { SignatoriesPage } from '@/pages/SignatoriesPage';
+import { ClientsPage } from '@/pages/ClientsPage';
+import { ServicesPage } from '@/pages/ServicesPage';
+import { QuotationsPage } from '@/pages/QuotationsPage';
+import { QuotationEditorPage } from '@/pages/QuotationEditorPage';
 
 export default function App() {
   const restore = useAuthStore((s) => s.restore);
@@ -66,6 +70,46 @@ export default function App() {
             <ProtectedRoute>
               <DashboardLayout>
                 <SignatoriesPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clientes"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <ClientsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/servicios"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <ServicesPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cotizaciones"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <QuotationsPage />
+              </DashboardLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cotizaciones/:id"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout>
+                <QuotationEditorPage />
               </DashboardLayout>
             </ProtectedRoute>
           }

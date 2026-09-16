@@ -1,4 +1,11 @@
-import { IsEmail, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateIf,
+} from 'class-validator';
 
 export class CreateDocumentDto {
   /** Concepto / nombre visible del documento. */
@@ -15,6 +22,9 @@ export class CreateDocumentDto {
 
   /** Carpeta donde se guardará el documento. Omitir = raíz. */
   @IsOptional() @IsInt() folderId?: number | null;
+
+  /** Cliente registrado al que pertenece el documento (opcional). */
+  @IsOptional() @IsInt() clienteId?: number | null;
 }
 
 export class UpdateDocumentDto {
@@ -22,11 +32,21 @@ export class UpdateDocumentDto {
   @IsOptional() @IsInt() signatoryId?: number;
   /** Mover el documento a otra carpeta. null = raíz. */
   @IsOptional() @IsInt() folderId?: number | null;
+  /** Asignar / quitar (null) el cliente del documento. */
+  @IsOptional() @IsInt() clienteId?: number | null;
 }
 
 export class SendSignedEmailDto {
-  /** Correo del cliente al que se remite el documento firmado. */
-  @IsEmail() email!: string;
+  /**
+   * Cliente registrado: se usa su correo y nombre. Si se envía, `email`
+   * puede omitirse.
+   */
+  @IsOptional() @IsInt() clienteId?: number;
+
+  /** Correo destino (obligatorio si no se indica clienteId). */
+  @ValidateIf((o) => !o.clienteId)
+  @IsEmail({}, { message: 'Debes indicar un correo válido o un cliente registrado' })
+  email?: string;
 
   @IsOptional() @IsString() clienteNombre?: string;
 }

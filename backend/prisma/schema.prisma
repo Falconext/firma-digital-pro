@@ -2,8 +2,8 @@
 //  Esquema de base de datos — Firma Digital Pro
 //  Prisma traduce este archivo a tablas SQL. Cada "model" = una tabla.
 //
-//  Por defecto usamos SQLite (archivo dev.db) para que sea fácil de arrancar.
-//  Para producción: cambia provider a "postgresql" y ajusta DATABASE_URL.
+//  Usamos PostgreSQL (en Railway en producción; en local puedes apuntar a la
+//  misma base de Railway o a un Postgres con Docker). Ver docs/06.
 // ===========================================================================
 
 generator client {
@@ -11,7 +11,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite" // Cambiar a "postgresql" en producción
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -31,20 +31,21 @@ enum DocumentStatus {
 
 /// Usuarios que ingresan a la plataforma.
 model User {
-  id            Int      @id @default(autoincrement())
-  nombre        String
-  apellido      String
-  email         String   @unique
-  password      String // Se guarda "hasheada" con bcrypt, nunca en texto plano
-  rol           Role     @default(OPERADOR)
-  imagenPerfil  String?
-  estado        Boolean  @default(true) // false = usuario deshabilitado
-  refreshToken  String? // Token de refresco (hasheado) para renovar la sesión
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  apellido     String
+  email        String   @unique
+  password     String // Se guarda "hasheada" con bcrypt, nunca en texto plano
+  rol          Role     @default(OPERADOR)
+  imagenPerfil String?
+  estado       Boolean  @default(true) // false = usuario deshabilitado
+  refreshToken String? // Token de refresco (hasheado) para renovar la sesión
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  documents     Document[]
-  auditLogs     AuditLog[]
+  documents  Document[]
+  auditLogs  AuditLog[]
+  quotations Quotation[]
 
   @@map("usuarios")
 }
@@ -53,20 +54,21 @@ model User {
 /// (Ej: el gerente que aprueba certificados). Reemplaza el arreglo fijo
 /// "options" que estaba escrito a mano en el proyecto original.
 model Signatory {
-  id           Int      @id @default(autoincrement())
-  nombre       String
-  dni          String
-  cip          String?
-  cargo        String
-  empresa      String
-  motivo       String   @default("Aprobación de Documento")
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  dni         String
+  cip         String?
+  cargo       String
+  empresa     String
+  motivo      String   @default("Aprobación de Documento")
   /// Imagen PNG de la rúbrica/firma manuscrita (base64). Se estampa junto al QR.
-  firmaImagen  String?
-  estado       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  firmaImagen String?
+  estado      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  documents Document[]
+  documents  Document[]
+  quotations Quotation[]
 
   @@map("firmantes")
 }
@@ -75,34 +77,34 @@ model Signatory {
 /// Una carpeta puede contener subcarpetas (parent → hijos) sin límite de niveles.
 /// Son COMPARTIDAS: todos los usuarios ven el mismo árbol.
 model Carpeta {
-  id        Int        @id @default(autoincrement())
-  nombre    String
+  id     Int    @id @default(autoincrement())
+  nombre String
 
   /// Carpeta padre. null = carpeta en la raíz. Al borrar el padre, se borran
   /// los hijos en cascada (los documentos se mueven a la raíz, ver folderId).
-  parent    Carpeta?   @relation("CarpetaHijos", fields: [parentId], references: [id], onDelete: Cascade)
-  parentId  Int?
-  hijos     Carpeta[]  @relation("CarpetaHijos")
+  parent   Carpeta?  @relation("CarpetaHijos", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId Int?
+  hijos    Carpeta[] @relation("CarpetaHijos")
 
   documents Document[]
 
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("carpetas")
 }
 
 /// Documentos PDF gestionados por la plataforma.
 model Document {
-  id             Int            @id @default(autoincrement())
-  fileName       String // Concepto / nombre visible del documento
-  storageKey     String // Nombre del archivo PDF original en disco
-  sealedKey      String? // PDF con QR + bloque de firmante (sello automático al subir)
-  signedKey      String? // Nombre del archivo PDF ya firmado (si existe)
-  status         DocumentStatus @default(PENDIENTE)
-  hash           String? // Huella SHA-256 del archivo vigente (integridad)
-  sealedAt       DateTime? // Cuándo se estampó el sello + QR automático
-  signedAt       DateTime?
+  id         Int            @id @default(autoincrement())
+  fileName   String // Concepto / nombre visible del documento
+  storageKey String // Nombre del archivo PDF original en disco
+  sealedKey  String? // PDF con QR + bloque de firmante (sello automático al subir)
+  signedKey  String? // Nombre del archivo PDF ya firmado (si existe)
+  status     DocumentStatus @default(PENDIENTE)
+  hash       String? // Huella SHA-256 del archivo vigente (integridad)
+  sealedAt   DateTime? // Cuándo se estampó el sello + QR automático
+  signedAt   DateTime?
 
   /// Datos extraídos de la firma digital embebida (flujo de re-subida del PDF
   /// ya firmado con ReFirma). Se llenan al validar la firma PAdES/PKCS#7.
@@ -112,24 +114,33 @@ model Document {
   signatureValid Boolean? // Resultado de la validación criptográfica
   signatureInfo  String? // JSON con el detalle completo de la validación
 
-  /// Datos del cliente a quien se remite el documento firmado por correo.
+  /// Cliente registrado al que pertenece / se remite el documento (opcional).
+  /// Si se borra el cliente, el documento no se pierde (SetNull).
+  cliente   Client? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  clienteId Int?
+
+  /// Datos del envío por correo tal como se hizo (se conservan aunque el
+  /// cliente registrado cambie después su correo o nombre).
   clienteEmail   String?
   clienteNombre  String?
   emailEnviadoAt DateTime?
 
   /// Carpeta donde vive el documento. null = raíz. Si se borra la carpeta,
   /// el documento no se pierde: queda en la raíz (SetNull).
-  carpeta      Carpeta?       @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  folderId     Int?
+  carpeta  Carpeta? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  folderId Int?
 
-  signatory    Signatory?     @relation(fields: [signatoryId], references: [id])
-  signatoryId  Int?
+  signatory   Signatory? @relation(fields: [signatoryId], references: [id])
+  signatoryId Int?
 
-  createdBy    User           @relation(fields: [createdById], references: [id])
-  createdById  Int
+  createdBy   User @relation(fields: [createdById], references: [id])
+  createdById Int
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  /// Si el PDF nació de una cotización (flujo "generar documento para firma").
+  cotizacion Quotation?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("documentos")
 }
@@ -149,7 +160,7 @@ model AuditLog {
   @@map("auditoria")
 }
 
-/// Tipos de documento del cliente.
+/// Tipos de documento de identidad del cliente.
 enum TipoDocumento {
   DNI
   RUC
@@ -157,19 +168,176 @@ enum TipoDocumento {
   PASAPORTE
 }
 
-/// Clientes a quienes se remiten documentos.
+/// Clientes de la empresa: a quienes se les remiten los documentos firmados
+/// y a quienes se les emitirán cotizaciones. Puede ser una persona (DNI) o
+/// una empresa (RUC). Se "borran" de forma suave (estado = false) para no
+/// perder el historial de documentos/cotizaciones asociados.
 model Client {
   id              Int           @id @default(autoincrement())
   tipoDocumento   TipoDocumento
   numeroDocumento String
+  /// Nombre completo (persona) o razón social (empresa).
+  nombre          String
+  /// Persona de contacto en el cliente (se imprime en la cotización).
+  contacto        String?
   correo          String
   telefono        String
-  estado          Boolean       @default(true)
+  direccion       String?
   imagenPerfil    String?
+  estado          Boolean       @default(true)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  @@unique([tipoDocumento, numeroDocumento])
+  documents  Document[]
+  quotations Quotation[]
 
+  /// Un mismo documento de identidad no puede registrarse dos veces.
+  @@unique([tipoDocumento, numeroDocumento])
   @@map("clientes")
+}
+
+/// Qué se cotiza. La empresa (laboratorio) vende SERVICIOS; PRODUCTO queda
+/// disponible por si algún día vende bienes (kits, insumos, reactivos).
+enum TipoItem {
+  SERVICIO
+  PRODUCTO
+}
+
+/// Líneas de negocio de un laboratorio de ensayos e inspecciones.
+enum CategoriaServicio {
+  ENSAYO_FISICOQUIMICO
+  ENSAYO_MICROBIOLOGICO
+  ENSAYO_SENSORIAL
+  INSPECCION
+  MUESTREO
+  CONSULTORIA
+  CAPACITACION
+  OTRO
+}
+
+/// Catálogo de servicios (y eventualmente productos) que la empresa cotiza.
+/// Cada ítem tiene un código único, precio de lista y unidad de cobro.
+/// Se "borran" de forma suave (estado = false) para no romper cotizaciones.
+model Service {
+  id                Int               @id @default(autoincrement())
+  /// Código interno único. Ej: FQ-001, MB-010, INS-003.
+  codigo            String            @unique
+  nombre            String
+  descripcion       String?
+  tipo              TipoItem          @default(SERVICIO)
+  categoria         CategoriaServicio @default(OTRO)
+  /// Norma o método de referencia. Ej: "AOAC 925.10", "NTP ISO 4833-1".
+  metodo            String?
+  /// true si está dentro del alcance de acreditación INACAL (ISO 17025/17020).
+  acreditado        Boolean           @default(false)
+  /// true si el servicio lo ejecuta un tercero (SUB); false = propio (PRO).
+  subcontratado     Boolean           @default(false)
+  /// Unidad de cobro: muestra, ensayo, visita, hora, día, unidad.
+  unidad            String            @default("muestra")
+  precio            Decimal           @default(0)
+  moneda            String            @default("PEN")
+  /// Días hábiles estimados para entregar el resultado / informe.
+  tiempoEntregaDias Int?
+  estado            Boolean           @default(true)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  quotationItems QuotationItem[]
+
+  @@map("servicios")
+}
+
+/// Ciclo de vida de una cotización.
+enum EstadoCotizacion {
+  BORRADOR // Se está armando; editable
+  ENVIADA // Remitida al cliente (por correo o manualmente)
+  ACEPTADA // El cliente la aprobó
+  RECHAZADA // El cliente la descartó
+  VENCIDA // Pasó la fecha de validez sin respuesta
+  ANULADA // Dada de baja internamente
+}
+
+/// Cotización (propuesta económica) emitida a un cliente.
+/// Los montos se calculan en el servidor a partir de los ítems y se guardan
+/// "congelados", para que un cambio posterior de precios en el catálogo no
+/// altere cotizaciones ya emitidas.
+model Quotation {
+  id            Int              @id @default(autoincrement())
+  /// Correlativo único por año. Ej: COT-2026-0001
+  numero        String           @unique
+  cliente       Client           @relation(fields: [clienteId], references: [id])
+  clienteId     Int
+  estado        EstadoCotizacion @default(BORRADOR)
+  fecha         DateTime         @default(now())
+  /// Días de validez de la oferta a partir de la fecha.
+  validezDias   Int              @default(15)
+  vencimiento   DateTime?
+  moneda        String           @default("PEN")
+  aplicaIgv     Boolean          @default(true)
+  igvPorcentaje Decimal          @default(18)
+  /// Suma de los ítems (sin descuento ni IGV).
+  subtotal      Decimal          @default(0)
+  /// Descuento global en monto.
+  descuento     Decimal          @default(0)
+  igv           Decimal          @default(0)
+  total         Decimal          @default(0)
+  observaciones String?
+  /// Condiciones comerciales (forma de pago, entrega, etc.) impresas en el PDF.
+  condiciones   String?
+
+  /// ---- Datos del servicio (sección II del formato) ----
+  codigoServicio     String?
+  servicioSolicitado String?
+  /// ---- Nota (sección III) ----
+  contramuestra      Boolean    @default(false)
+  entregable         String?
+  tiempoEntrega      String?
+  /// Responsable de atención al cliente que firma la cotización.
+  responsable        Signatory? @relation(fields: [responsableId], references: [id], onDelete: SetNull)
+  responsableId      Int?
+  enviadaAt          DateTime?
+  enviadaA           String?
+
+  /// Documento PDF generado a partir de esta cotización (para sellar y firmar).
+  documento   Document? @relation(fields: [documentoId], references: [id], onDelete: SetNull)
+  documentoId Int?      @unique
+
+  createdBy   User @relation(fields: [createdById], references: [id])
+  createdById Int
+
+  items QuotationItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cotizaciones")
+}
+
+/// Línea de una cotización. Guarda una "foto" del servicio (código, nombre,
+/// unidad, precio) al momento de cotizar.
+model QuotationItem {
+  id                 Int       @id @default(autoincrement())
+  cotizacion         Quotation @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+  cotizacionId       Int
+  /// Servicio del catálogo del que se tomó la línea (opcional: línea libre).
+  servicio           Service?  @relation(fields: [servicioId], references: [id], onDelete: SetNull)
+  servicioId         Int?
+  codigo             String?
+  /// Actividad / servicio (columna ACTIVIDAD). Ej: "Inspección de lote por muestreo".
+  actividad          String?
+  /// Descripción del producto o muestra (columna DESCRIPCIÓN). Ej: "Almidón de maíz".
+  descripcion        String
+  /// Norma o documento de referencia (columna DOCUMENTO NORMATIVO).
+  documentoNormativo String?
+  /// PRO (propio) / SUB (subcontratado).
+  propio             Boolean   @default(true)
+  /// AC (acreditado) / NA (no acreditado).
+  acreditado         Boolean   @default(false)
+  unidad             String    @default("unidad")
+  cantidad           Decimal   @default(1)
+  precioUnitario     Decimal
+  total              Decimal
+  orden              Int       @default(0)
+
+  @@map("cotizacion_items")
 }

@@ -7,7 +7,7 @@
 ---
 
 **Project:** Firma Digital Pro
-**Generated:** 2026-08-09 06:56:03
+**Generated:** 2026-08-09 06:56:03 · **Actualizado:** 2026-09-16 (identidad LENA)
 **Category:** E-signature / Document Workflow
 **Design Dials:** Variance 5/10 (Balanced / Modern) | Motion 5/10 (Standard) | Density 7/10 (Standard)
 
@@ -17,31 +17,36 @@
 
 ### Color Palette
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#1E40AF` | `--color-primary` |
-| On Primary | `#FFFFFF` | `--color-on-primary` |
-| Secondary | `#3B82F6` | `--color-secondary` |
-| Accent/CTA | `#16A34A` | `--color-accent` |
-| Background | `#EFF6FF` | `--color-background` |
-| Foreground | `#1E3A8A` | `--color-foreground` |
-| Muted | `#E9EFF5` | `--color-muted` |
-| Border | `#BFDBFE` | `--color-border` |
-| Destructive | `#DC2626` | `--color-destructive` |
-| Ring | `#1E40AF` | `--color-ring` |
+| Role | Hex | Tailwind token |
+|------|-----|----------------|
+| Primary (petróleo del logo) | `#006389` | `primary` |
+| Primary hover | `#00516F` | `primary-hover` |
+| Primary deep (fondos oscuros) | `#00425C` | `primary-deep` |
+| Primary light (cian del logo) | `#3BC6EE` | `primary-light` |
+| Primary soft (fondos de ícono / activo) | `#E3F4FA` | `primary-soft` |
+| Accent/CTA (lima del logo, texto oscuro) | `#B9D86D` / texto `#0B3346` | `accent` / `accent-foreground` |
+| Background | `#F4F9FB` | `background` |
+| Surface | `#FFFFFF` | `surface` |
+| Foreground | `#0B3346` | `foreground` |
+| Muted / Muted foreground | `#E8F1F5` / `#4F7382` | `muted` / `muted-foreground` |
+| Border | `#D5E5EC` | `border` |
+| Success / soft | `#3F7D20` / `#EEF6DC` | `success` / `success-soft` |
+| Warning / soft | `#B45309` / `#FEF3C7` | `warning` / `warning-soft` |
+| Info / soft | `#00516F` / `#E3F4FA` | `info` / `info-soft` |
+| Destructive / soft | `#DC2626` / `#FEE2E2` | `destructive` / `destructive-soft` |
 
-**Color Notes:** Professional blue + service green + accessibility
+**Color Notes:** Paleta extraída del logotipo LENA (petróleo #006389, cian #3BC6EE, lima #B9D86D). Todos los pares texto/fondo verificados ≥ 4.5:1 (WCAG AA). Los estados usan tokens semánticos (`success`, `warning`, `info`, `destructive`) — nunca colores sueltos de Tailwind. Logos en `frontend/public/`: `lena-logo.png` (completo), `lena-mark.png` (sin lema, para el sidebar), `lena-logo-white.png` (fondos oscuros), `favicon.png`.
 
 ### Typography
 
-- **Heading Font:** Lexend
-- **Body Font:** Source Sans 3
+- **Heading Font:** Plus Jakarta Sans (geométrica, afín al logotipo)
+- **Body Font:** Inter
 - **Mood:** corporate, trustworthy, accessible, readable, professional, clean
-- **Google Fonts:** [Lexend + Source Sans 3](https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap)
+- **Google Fonts:** [Plus Jakarta Sans + Inter](https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap)
 
 **CSS Import:**
 ```css
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 ```
 
 ### Spacing Variables
@@ -76,8 +81,8 @@
 ```css
 /* Primary Button */
 .btn-primary {
-  background: #16A34A;
-  color: white;
+  background: #B9D86D;
+  color: #0B3346;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -93,8 +98,8 @@
 /* Secondary Button */
 .btn-secondary {
   background: transparent;
-  color: #1E40AF;
-  border: 2px solid #1E40AF;
+  color: #006389;
+  border: 2px solid #006389;
   padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
@@ -133,9 +138,9 @@
 }
 
 .input:focus {
-  border-color: #1E40AF;
+  border-color: #006389;
   outline: none;
-  box-shadow: 0 0 0 3px #1E40AF20;
+  box-shadow: 0 0 0 4px rgba(59, 198, 238, 0.25);
 }
 ```
 

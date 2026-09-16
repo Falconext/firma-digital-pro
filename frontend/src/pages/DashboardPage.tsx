@@ -10,6 +10,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { http } from '@/lib/api';
+import { useAuthStore } from '@/stores/auth.store';
 import type { DashboardSummary } from '@/types';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/Badge';
@@ -17,6 +18,7 @@ import { formatDate } from '@/lib/utils';
 
 export function DashboardPage() {
   const [data, setData] = useState<DashboardSummary | null>(null);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     http.get<DashboardSummary>('/dashboard/resumen').then(setData);
@@ -26,20 +28,20 @@ export function DashboardPage() {
   const maxMes = Math.max(1, ...(data?.firmadosPorMes.map((m) => m.firmados) ?? [1]));
 
   const stats = [
-    { label: 'Total documentos', value: t?.total ?? 0, icon: FileText, color: 'text-primary bg-primary/10' },
-    { label: 'Firmados', value: t?.firmados ?? 0, icon: FileSignature, color: 'text-accent bg-accent/10' },
-    { label: 'Pendientes', value: t?.pendientes ?? 0, icon: Clock, color: 'text-amber-600 bg-amber-100' },
-    { label: 'Firmantes activos', value: t?.firmantes ?? 0, icon: Users, color: 'text-blue-600 bg-blue-100' },
+    { label: 'Total documentos', value: t?.total ?? 0, icon: FileText, color: 'text-primary bg-primary-soft' },
+    { label: 'Firmados', value: t?.firmados ?? 0, icon: FileSignature, color: 'text-success bg-success-soft' },
+    { label: 'Pendientes', value: t?.pendientes ?? 0, icon: Clock, color: 'text-warning bg-warning-soft' },
+    { label: 'Firmantes activos', value: t?.firmantes ?? 0, icon: Users, color: 'text-info bg-info-soft' },
   ];
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl font-bold text-foreground">
-          Panel de control
+      <div className="flex flex-col gap-1">
+        <h1 className="page-title">
+          Hola, {user?.nombre ?? 'bienvenido'}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Resumen general de la actividad de firma digital
+          Resumen general de la actividad del laboratorio
         </p>
       </div>
 
@@ -48,14 +50,16 @@ export function DashboardPage() {
         {stats.map((s, i) => (
           <Card
             key={s.label}
-            className="animate-fade-in-up p-5"
+            className="animate-fade-in-up p-5 transition-shadow hover:shadow-soft-lg"
             style={{ animationDelay: `${i * 60}ms` }}
           >
-            <div className={`mb-3 inline-flex rounded-xl p-2.5 ${s.color}`}>
-              <s.icon className="h-5 w-5" />
+            <div className="flex items-start justify-between">
+              <p className="text-sm font-medium text-muted-foreground">{s.label}</p>
+              <div className={`inline-flex rounded-xl p-2 ${s.color}`}>
+                <s.icon className="h-5 w-5" />
+              </div>
             </div>
-            <p className="text-3xl font-bold text-foreground">{s.value}</p>
-            <p className="text-sm text-muted-foreground">{s.label}</p>
+            <p className="tabular mt-3 font-heading text-3xl font-bold text-foreground">{s.value}</p>
           </Card>
         ))}
       </div>
@@ -71,10 +75,10 @@ export function DashboardPage() {
           </div>
           <div className="flex h-56 items-end gap-2">
             {data?.firmadosPorMes.map((m) => (
-              <div key={m.mes} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex w-full flex-1 items-end">
+              <div key={m.mes} className="flex h-full flex-1 flex-col items-center gap-2">
+                <div className="flex min-h-0 w-full flex-1 items-end rounded-t-lg bg-muted/40">
                   <div
-                    className="w-full rounded-t-lg bg-primary transition-all duration-500 hover:bg-primary-hover"
+                    className="w-full rounded-t-lg bg-gradient-to-t from-primary to-primary-light/80 transition-all duration-500 hover:from-primary-hover hover:to-primary-light"
                     style={{ height: `${(m.firmados / maxMes) * 100}%`, minHeight: m.firmados ? 6 : 0 }}
                     title={`${m.firmados} firmados`}
                   />

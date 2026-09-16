@@ -39,7 +39,7 @@ export class FoldersService {
       }),
       this.prisma.document.findMany({
         where: { folderId: parentId },
-        include: { signatory: true },
+        include: { signatory: true, cliente: true },
         orderBy: { createdAt: 'desc' },
       }),
       this.breadcrumb(parentId),

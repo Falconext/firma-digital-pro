@@ -38,14 +38,14 @@ export function Modal({ open, onClose, title, children, size = 'lg' }: ModalProp
 
   return (
     <div
-      className="fixed top-[-30px] inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:items-center"
+      className="fixed top-[-30px] inset-0 z-50 flex items-start justify-center overflow-y-auto bg-primary-deep/50 backdrop-blur-[2px] p-4 sm:items-center"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
         className={cn(
-          'w-full animate-fade-in-up rounded-2xl bg-surface shadow-soft-lg',
+          'w-full animate-fade-in-up rounded-2xl border border-border bg-surface shadow-soft-lg',
           sizes[size],
         )}
         onClick={(e) => e.stopPropagation()}

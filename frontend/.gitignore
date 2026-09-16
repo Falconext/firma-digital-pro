@@ -4,3 +4,8 @@ dist-ssr
 .env
 *.local
 .vite
+
+# Artefactos de compilación de TypeScript
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
